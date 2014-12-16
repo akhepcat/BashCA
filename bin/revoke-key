@@ -1,0 +1,61 @@
+#!/bin/bash
+MYDIR=$(dirname $0)
+TS=$(date +"%Y%m%d")
+
+#####################################
+
+REVOKE=${1}
+if [ ! -r ${MYDIR}/ca.conf ]
+then
+        echo "You must create a configuration file in ${MYDIR}/ca.conf"
+        exit 1
+fi
+
+. ${MYDIR}/ca.conf
+
+if [ ! -r ${CRLS}/crlnumber -o ! -s ${CRLS}/crlnumber ]
+then
+   SERIAL="${TS}000000"
+   echo ${SERIAL} > ${CRLS}/crlnumber
+fi
+
+if [ ! -r ${CRLS}/${CRLFILE} ]
+then
+${DBG}  openssl ca -config ${SIGNCFG} -gencrl -out ${CRLS}/${CRLFILE}
+fi
+
+if [ -f "${CERTS}/${REVOKE}" -a -s "${CERTS}/${REVOKE}" ]
+then
+	RFILE=${CERTS}/${REVOKE}
+elif [ -f "${CERTS}/${REVOKE}.crt" -a -s "${CERTS}/${REVOKE}.crt" ]
+then
+	RFILE="${REVOKE}.crt"
+elif [ -f "${CERTS}/${REVOKE}.pem" -a -s "${CERTS}/${REVOKE}.pem" ]
+then
+	RFILE="${REVOKE}.pem"
+else
+        echo "Can't find file ${REVOKE:-because no args given}"
+        exit 1
+fi
+        SN=$(openssl x509 -text -noout -in ${CERTS}/${RFILE} | grep -i 'serial num' | cut -f 2 -d\()
+        SN=${SN//0x/}
+        SN=${SN//)/}
+	SN=${SN~~}
+
+        openssl x509 -text -noout -in ${CERTS}/${RFILE}
+        read -t 10 -N 1 -r -p "Really revoke this key? (y/n)" CONT
+        echo ""
+        if [ $? -gt 128 -o "${CONT,,}" != "y" ]
+        then
+                echo "Not revoking ${REVOKE}"
+                exit 1
+        fi
+${DBG}  openssl ca -config ${SIGNCFG} -revoke ${CERTS}/${RFILE}
+${DBG}  test -r "${CRLS}/${CRLFILE}" || ${DBG} openssl ca -config ${SIGNCFG} -gencrl -out ${CRLS}/${CRLFILE}
+${DBG}  test -r "${CRLS}/${CRLFILE}" -a -d "${CRLDIST}" && ${DBG} OPENSSL_CONF=${SIGNCFG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLDIST}/${CRLFILE}
+
+${DBG} mv -f ${CERTS}/${SN}.pem ${REVK}/
+${DBG} mv -f ${CERTS}/${RFILE} ${REVK}/${SN}-${RFILE}
+${DBG} mv -f ${CSRS}/${RFILE%.*}.csr ${REVK}/${SN}-${RFILE%.*}.csr
+${DBG} mv -f ${PRIV}/${RFILE%.*}-key.pem ${REVK}/${SN}-${RFILE%.*}-key.pem
+

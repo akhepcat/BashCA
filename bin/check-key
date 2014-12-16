@@ -1,0 +1,36 @@
+#!/bin/bash
+
+MYDIR=$(dirname $0)
+TS=$(date +"%Y%m%d")
+
+if [ ! -r ${MYDIR}/ca.conf ]
+then
+        echo "You must create a configuration file in ${MYDIR}/ca.conf"
+        exit 1
+fi
+
+. ${MYDIR}/ca.conf
+
+
+if [ -n "$*" ]
+then
+        CERTIFICATES="$*"
+else
+	CERTIFICATES="${DOMAIN}-SIGNcert"
+fi
+
+
+for CERT in ${CERTIFICATES}
+do
+#openssl rsa -text -noout -in ${DIR}/${KEY}
+
+#Private-key
+	openssl rsa -text -check -noout -in ${PRIV}/${CERT}-key.[pc]*
+	test $? -gt 0 && exit 1
+#Certificate
+	openssl x509  -text -noout -in ${CERTS}/${CERT}.[pc]*
+	test $? -gt 0 && exit 1
+
+	echo "----------------------"
+	echo ""
+done
