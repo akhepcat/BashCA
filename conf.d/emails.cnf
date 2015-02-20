@@ -1,0 +1,74 @@
+HOME			= /etc/ssl/misc
+RANDFILE		= $ENV::HOME/.rnd
+
+[ ca ]
+default_ca		= CA_default
+
+[ CA_default ]
+; These need to be edited to point to your local Signing CA
+certificate		= $dir/certs/
+private_key		= $dir/private/
+;
+dir			= /etc/ssl/misc
+certs			= $dir/certs
+crl_dir			= $dir/crl
+database		= $dir/db/index.txt
+new_certs_dir		= $dir/certs
+database		= $dir/db/certindex.txt
+serial			= $dir/db/serial
+crlnumber		= $dir/crl/crlnumber
+crl			= $dir/crl/crl.pem
+RANDFILE		= $dir/private/.rand
+x509_extensions		= usr_cert
+name_opt 		= ca_default
+cert_opt 		= ca_default
+email_in_dn		= no
+copy_extensions 	= copy
+crl_extensions		= crl_ext
+default_days		= 365
+default_crl_days	= 30
+preserve		= no
+default_md		= sha512
+policy			= policy_match
+
+[ policy_match ]
+countryName		= match
+stateOrProvinceName	= match
+organizationName	= match
+organizationalUnitName	= optional
+commonName		= required
+emailAddress		= required
+subjectAltName		= supplied
+
+[ req ]
+default_bits		= 4096
+default_md		= sha512
+default_keyfile 	= privkey.pem
+distinguished_name	= req_distinguished_name
+req_extensions		= v3_req
+prompt			= yes
+encrypt_key		= no
+string_mask		= utf8only
+
+[ req_distinguished_name ]
+commonName		= "User Full Name"
+commonName_default	= "John M Doe"
+emailAddress		= "User Email Addres"
+emailAddress_default	= "email@address.dom"
+
+[ usr_cert ]
+basicConstraints=CA:FALSE
+nsCertType = client,email
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+issuerAltName = issuer:copy
+
+[ crl_ext ]
+authorityKeyIdentifier    =keyid:always,issuer:always
+
+[ v3_req ]
+keyUsage		= nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage	= clientAuth, emailProtection
+subjectAltName		= email:copy
+
+[alt_names]
