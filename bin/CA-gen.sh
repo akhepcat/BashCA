@@ -161,6 +161,47 @@ ${DBG}	openssl x509 -in ${CERTS}/${SERVER}.crt -text -noout
     fi
 done
 
+for EMAIL in ${EMAIL_CERTS}
+  do
+    if [ ! -r ${CERTS}/${EMAIL}.crt ];
+    then
+        echo "-----"
+        echo ""
+        echo "<--- Certificate for ${EMAIL} --->"
+        echo ""
+        if [ -r ${CBASE}/${EMAIL}.cnf ]
+        then
+                CONF=${CBASE}/${EMAIL}.cnf
+        else
+                CONF=${CBASE}/emails.cnf
+        fi
+
+# Create the intermediate private key 
+        test -r ${PRIV}/${EMAIL}-key.pem || ${DBG} openssl genrsa -des3 -out ${PRIV}/${EMAIL}-key.pem 4096
+        test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}-key.pem private certificate"
+
+# Create the intermediate SIGNING request
+        test -r ${CSRS}/${EMAIL}.csr || ${DBG} openssl req -config ${CONF} -key ${PRIV}/${EMAIL}-key.pem -new ${DIGEST} -out ${CSRS}/${EMAIL}.csr
+        test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}-key.pem private certificate"
+
+# Create the signed SIGNING certificate
+        test -r ${CERTS}/${EMAIL}.crt || ${DBG} \
+        	openssl x509 -req -in ${CSRS}/${EMAIL}.csr -out ${CERTS}/${EMAIL}.crt \
+        	   -CA ${CERTS}/${DOMAIN}-SIGNcert.pem -CAkey ${PRIV}/${DOMAIN}-SIGNcert-key.pem -CAserial ${BASE}/db/serial \
+        	   -setalias "${DOMAIN} S/MIME Certificate" -addtrust emailProtection -addreject serverAuth -trustout
+        test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}.pem public certificate"
+
+# Export the certificate in SMIME format
+	test -r ${CERTS}/${EMAIL}.p12 || ${DBG} openssl pkcs12 -export -in ${CERTS}/${EMAIL}.crt -inkey ${PRIV}/${EMAIL}-key.pem -out ${CERTS}/${EMAIL}.p12
+	test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}.pem PKCS12 certificate"
+
+${DBG}	openssl x509 -in ${CERTS}/${EMAIL}.crt -text -noout
+        test $? -eq 0 || exit
+        echo "----"
+        echo ""
+    fi
+done
+
 
 echo ""
 echo "<---  DONE --->"
