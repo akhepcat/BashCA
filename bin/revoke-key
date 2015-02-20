@@ -5,13 +5,13 @@ TS=$(date +"%Y%m%d")
 #####################################
 
 REVOKE=${1}
-if [ ! -r ${MYDIR}/ca.conf ]
+
+if [ ! -r ${MYDIR}/../conf.d/ca.conf ]
 then
-        echo "You must create a configuration file in ${MYDIR}/ca.conf"
-        exit 1
+        do_error "You must create a configuration file in ${MYDIR}/../conf.d/ca.conf"
 fi
 
-. ${MYDIR}/ca.conf
+. ${MYDIR}/../conf.d/ca.conf
 
 if [ ! -r ${CRLS}/crlnumber -o ! -s ${CRLS}/crlnumber ]
 then
@@ -52,7 +52,7 @@ fi
         fi
 ${DBG}  openssl ca -config ${SIGNCFG} -revoke ${CERTS}/${RFILE}
 ${DBG}  test -r "${CRLS}/${CRLFILE}" || ${DBG} openssl ca -config ${SIGNCFG} -gencrl -out ${CRLS}/${CRLFILE}
-${DBG}  test -r "${CRLS}/${CRLFILE}" -a -d "${CRLDIST}" && ${DBG} OPENSSL_CONF=${SIGNCFG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLDIST}/${CRLFILE}
+${DBG}  test -r "${CRLS}/${CRLFILE}" -a -d "${CRLDIST}" && ${DBG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLDIST}/${CRLFILE}
 
 ${DBG} mv -f ${CERTS}/${SN}.pem ${REVK}/
 ${DBG} mv -f ${CERTS}/${RFILE} ${REVK}/${SN}-${RFILE}

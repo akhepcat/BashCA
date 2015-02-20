@@ -3,14 +3,12 @@
 MYDIR=$(dirname $0)
 TS=$(date +"%Y%m%d")
 
-if [ ! -r ${MYDIR}/ca.conf ]
+if [ ! -r ${MYDIR}/../conf.d/ca.conf ]
 then
-        echo "You must create a configuration file in ${MYDIR}/ca.conf"
-        exit 1
+        do_error "You must create a configuration file in ${MYDIR}/../conf.d/ca.conf"
 fi
 
-. ${MYDIR}/ca.conf
-
+. ${MYDIR}/../conf.d/ca.conf
 
 if [ -n "$*" ]
 then
