@@ -54,8 +54,8 @@ ${DBG}  openssl ca -config ${SIGNCFG} -revoke ${CERTS}/${RFILE}
 ${DBG}  test -r "${CRLS}/${CRLFILE}" || ${DBG} openssl ca -config ${SIGNCFG} -gencrl -out ${CRLS}/${CRLFILE}
 ${DBG}  test -r "${CRLS}/${CRLFILE}" -a -d "${CRLDIST}" && ${DBG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLDIST}/${CRLFILE}
 
-${DBG} mv -f ${CERTS}/${SN}.pem ${REVK}/
-${DBG} mv -f ${CERTS}/${RFILE} ${REVK}/${SN}-${RFILE}
-${DBG} mv -f ${CSRS}/${RFILE%.*}.csr ${REVK}/${SN}-${RFILE%.*}.csr
-${DBG} mv -f ${PRIV}/${RFILE%.*}-key.pem ${REVK}/${SN}-${RFILE%.*}-key.pem
-
+${DBG}	test -r ${CERTS}/${SN}.pem	    && mv -f ${CERTS}/${SN}.pem ${REVK}/
+${DBG}	test -r ${CERTS}/${RFILE}	    && mv -f ${CERTS}/${RFILE} ${REVK}/${SN}-${RFILE}
+${DBG}	test -r ${CERTS}/${RFILE%.*}.p12    && mv -f ${CERTS}/${RFILE%.*}.p12 ${REVK}/${SN}-${RFILE%.*}.p12
+${DBG}	test -r ${CSRS}/${RFILE%.*}.csr	    && mv -f ${CSRS}/${RFILE%.*}.csr ${REVK}/${SN}-${RFILE%.*}.csr
+${DBG}	test -r ${PRIV}/${RFILE%.*}-key.pem && mv -f ${PRIV}/${RFILE%.*}-key.pem ${REVK}/${SN}-${RFILE%.*}-key.pem

@@ -51,6 +51,9 @@ encrypt_key		= no
 string_mask		= utf8only
 
 [ req_distinguished_name ]
+; uncomment these two lines in custom email certs to embed your PGP fingerprint
+; organizationalUnitName  = "PGP Fingerprint"
+; organizationalUnitName_default = "PGP Fingerprint 0123456789abcdefghijklmnopqrstuvwxyz"
 commonName		= "User Full Name"
 commonName_default	= "John M Doe"
 emailAddress		= "User Email Addres"
