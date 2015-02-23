@@ -5,10 +5,11 @@ RANDFILE		= $ENV::HOME/.rnd
 default_ca		= CA_default
 
 [ CA_default ]
-; These need to be edited to point to your local Signing CA
+# These need to be edited to point to your local Signing CA
 certificate		= $dir/certs/
 private_key		= $dir/private/
-;
+#
+
 dir			= /etc/ssl/misc
 certs			= $dir/certs
 crl_dir			= $dir/crl
@@ -22,12 +23,12 @@ RANDFILE		= $dir/private/.rand
 x509_extensions		= usr_cert
 name_opt 		= ca_default
 cert_opt 		= ca_default
-email_in_dn		= no
+email_in_dn		= yes
 copy_extensions 	= copy
 crl_extensions		= crl_ext
 default_days		= 365
 default_crl_days	= 30
-preserve		= no
+preserve		= yes
 default_md		= sha512
 policy			= policy_match
 
@@ -51,27 +52,26 @@ encrypt_key		= no
 string_mask		= utf8only
 
 [ req_distinguished_name ]
-; uncomment these two lines in custom email certs to embed your PGP fingerprint
-; organizationalUnitName  = "PGP Fingerprint"
-; organizationalUnitName_default = "PGP Fingerprint 0123456789abcdefghijklmnopqrstuvwxyz"
+# uncomment these two lines in custom email certs to embed your PGP fingerprint
+# organizationalUnitName  = "PGP Fingerprint"
+# organizationalUnitName_default = "PGP Fingerprint 0123456789abcdefghijklmnopqrstuvwxyz"
 commonName		= "User Full Name"
 commonName_default	= "John M Doe"
 emailAddress		= "User Email Addres"
 emailAddress_default	= "email@address.dom"
 
 [ usr_cert ]
-basicConstraints=CA:FALSE
-nsCertType = client,email
-subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid,issuer:always
-issuerAltName = issuer:copy
+basicConstraints        = critical,CA:false
+subjectKeyIdentifier	= hash
+subjectAltName          = email:copy
+issuerAltName		= issuer:copy
+authorityKeyIdentifier  = keyid:always
 
 [ crl_ext ]
-authorityKeyIdentifier    =keyid:always,issuer:always
+authorityKeyIdentifier  = keyid:always,issuer:always
 
 [ v3_req ]
+nsCertType		= client,email
 keyUsage		= nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage	= clientAuth, emailProtection
-subjectAltName		= email:copy
-
-[alt_names]
+basicConstraints        = critical,CA:false
