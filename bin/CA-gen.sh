@@ -109,7 +109,7 @@ echo "Creating Intermediate Signing certificate"
         test -s ${PRIV}/${DOMAIN}-SIGNcert-key.pem || ${DBG} openssl genrsa -aes256 -out ${PRIV}/${DOMAIN}-SIGNcert-key.pem 4096
         test $? -eq 0 || do_error "Couldn't generate the ${DOMAIN}-SIGNcert-key.pem private certificate"
 # Create the intermediate SIGNING request
-        test -s ${CSRS}/${DOMAIN}-SIGNcert.csr || ${DBG} openssl req -config ${SIGNCFG} -key ${PRIV}/${DOMAIN}-SIGNcert-key.pem -new ${DIGEST} -out ${CSRS}/${DOMAIN}-SIGNcert.csr
+        test -s ${CSRS}/${DOMAIN}-SIGNcert.csr || ${DBG} openssl req -config ${SIGNCFG} -key ${PRIV}/${DOMAIN}-SIGNcert-key.pem -extensions v3_ca_req -new ${DIGEST} -out ${CSRS}/${DOMAIN}-SIGNcert.csr
         test $? -eq 0 || do_error "Couldn't generate the ${DOMAIN}-SIGNcert.pem certificate request"
 # Create the signed SIGNING certificate
         test -s ${CERTS}/${DOMAIN}-SIGNcert.pem || ${DBG} openssl ca -config ${SIGNCFG} -extensions v3_ca -notext -in ${CSRS}/${DOMAIN}-SIGNcert.csr -out ${CERTS}/${DOMAIN}-SIGNcert.pem 
@@ -140,15 +140,15 @@ for SERVER in ${HOSTS} ${CUSTOM_HOSTS}
                 CONF=${SIGNCFG}
         fi
 
-# Create the intermediate private key 
+# Create the server private key 
         test -s ${PRIV}/${SERVER}-key.pem || ${DBG} openssl genrsa -aes256 -out ${PRIV}/${SERVER}-key.pem 4096
         test $? -eq 0 || do_error "Couldn't generate the ${SERVER}-key.pem private certificate"
 
-# Create the intermediate SIGNING request
+# Create the server certificate request
         test -s ${CSRS}/${SERVER}.csr || ${DBG} openssl req -config ${CONF} -key ${PRIV}/${SERVER}-key.pem -new ${DIGEST} -out ${CSRS}/${SERVER}.csr
         test $? -eq 0 || do_error "Couldn't generate the ${SERVER}-key.pem private certificate"
 
-# Create the signed SIGNING certificate
+# Create the signed certificate
         test -s ${CERTS}/${SERVER}.crt || ${DBG} openssl ca -config ${CONF} -notext -in ${CSRS}/${SERVER}.csr -out ${CERTS}/${SERVER}.crt 
         test $? -eq 0 || do_error "Couldn't generate the ${SERVER}.pem public certificate"
 
@@ -177,15 +177,15 @@ for EMAIL in ${EMAIL_CERTS}
 	DAYS="${DAYS:-365}"	# default to 365 if not set.
 	DAYS="-days ${DAYS}"
 
-# Create the intermediate private key 
+# Create the email private key 
         test -s ${PRIV}/${EMAIL}-key.pem || ${DBG} openssl genrsa -des3 -out ${PRIV}/${EMAIL}-key.pem 4096
         test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}-key.pem private certificate"
 
-# Create the intermediate SIGNING request
+# Create the email certificate request
         test -s ${CSRS}/${EMAIL}.csr || ${DBG} openssl req -config ${CONF} -key ${PRIV}/${EMAIL}-key.pem -new ${DIGEST} -out ${CSRS}/${EMAIL}.csr
         test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}-key.pem private certificate"
 
-# Create the signed SIGNING certificate
+# Create the email certificate
         if [ ! -s ${CERTS}/${EMAIL}.crt ];
         then
         	export OPENSSL_CONF=${CONF}
@@ -199,6 +199,7 @@ for EMAIL in ${EMAIL_CERTS}
         if [ ! -s ${CERTS}/${EMAIL}.p12 ];
         then
         	export OPENSSL_CONF=${CONF}
+        	# should we chain the public root+signing CA certs here?
 		${DBG} openssl pkcs12 -export -in ${CERTS}/${EMAIL}.crt -name "${EMAIL} S/MIME Certificate" -inkey ${PRIV}/${EMAIL}-key.pem -out ${CERTS}/${EMAIL}.p12
 		test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}.pem PKCS12 certificate"
 	fi

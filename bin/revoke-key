@@ -51,6 +51,8 @@ fi
                 exit 1
         fi
 ${DBG}  openssl ca -config ${SIGNCFG} -revoke ${CERTS}/${RFILE}
+if [ $? -eq 0 ]
+then
 ${DBG}  test -r "${CRLS}/${CRLFILE}" || ${DBG} openssl ca -config ${SIGNCFG} -gencrl -out ${CRLS}/${CRLFILE}
 ${DBG}  test -r "${CRLS}/${CRLFILE}" -a -d "${CRLDIST}" && ${DBG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLDIST}/${CRLFILE}
 
@@ -59,3 +61,6 @@ ${DBG}	test -r ${CERTS}/${RFILE}	    && mv -f ${CERTS}/${RFILE} ${REVK}/${SN}-${
 ${DBG}	test -r ${CERTS}/${RFILE%.*}.p12    && mv -f ${CERTS}/${RFILE%.*}.p12 ${REVK}/${SN}-${RFILE%.*}.p12
 ${DBG}	test -r ${CSRS}/${RFILE%.*}.csr	    && mv -f ${CSRS}/${RFILE%.*}.csr ${REVK}/${SN}-${RFILE%.*}.csr
 ${DBG}	test -r ${PRIV}/${RFILE%.*}-key.pem && mv -f ${PRIV}/${RFILE%.*}-key.pem ${REVK}/${SN}-${RFILE%.*}-key.pem
+else
+	echo "aborted due to error"
+fi

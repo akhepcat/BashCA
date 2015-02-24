@@ -183,14 +183,20 @@ basicConstraints		= critical,CA:TRUE
 subjectKeyIdentifier		= hash
 authorityKeyIdentifier		= keyid:always,issuer:always
 keyUsage			= cRLSign, keyCertSign, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement
+
+[ v3_ca_req ]
+basicConstraints                = critical,CA:TRUE
+subjectKeyIdentifier            = hash
+authorityKeyIdentifier          = keyid:always,issuer:always
+keyUsage                        = cRLSign, keyCertSign, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement
  
 [ v3_req ]
 keyUsage			= nonRepudiation, keyEncipherment, dataEncipherment, digitalSignature
-extendedKeyUsage		= serverAuth
-basicConstraints		= CA:FALSE
+extendedKeyUsage		= serverAuth, clientAuth, emailProtection
+basicConstraints		= critical,CA:FALSE
 subjectKeyIdentifier		= hash
 
 
-# keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement, keyCertSign, cRLSign, encipherOnly and decipherOnl
+# keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement, keyCertSign, cRLSign, encipherOnly and decipherOnly
 # extendedKeyUsage = serverAuth, clientAuth, codeSigning, emailProtection, timeStamping, msCodeInd, msCodeCom, msCTLSign, msSGC, msEFS, nsSGC
 # nscert = client, server, email, objsign, reserved, sslCA, emailCA, objCA
