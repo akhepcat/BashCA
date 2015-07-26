@@ -116,13 +116,18 @@ echo "Creating Intermediate Signing certificate"
         test -s ${CSRS}/${DOMAIN}-SIGNcert.csr || ${DBG} openssl req -config ${SIGNCFG} ${PASSIN} ${PASSOUT} -key ${PRIV}/${DOMAIN}-SIGNcert-key.pem -extensions v3_ca_req -new ${DIGEST} -out ${CSRS}/${DOMAIN}-SIGNcert.csr
         test $? -eq 0 || do_error "Couldn't generate the ${DOMAIN}-SIGNcert.pem certificate request"
 # Create the signed SIGNING certificate
-        test -s ${CERTS}/${DOMAIN}-SIGNcert.pem || ${DBG} openssl ca -config ${SIGNCFG} ${PASSIN} -extensions v3_ca -notext -in ${CSRS}/${DOMAIN}-SIGNcert.csr -out ${CERTS}/${DOMAIN}-SIGNcert.pem 
+        test -s ${CERTS}/${DOMAIN}-SIGNcert.pem || ${DBG} openssl ca -config ${SIGNCFG} ${PASSIN} -extensions v3_int_ca -notext -in ${CSRS}/${DOMAIN}-SIGNcert.csr -out ${CERTS}/${DOMAIN}-SIGNcert.pem 
         test $? -eq 0 || do_error "Couldn't generate the ${DOMAIN}-SIGNcert.pem certificate"
 
 ${DBG}	openssl x509 ${PASSIN} ${PASSOUT} -in ${CERTS}/${DOMAIN}-SIGNcert.pem -text -noout
 fi
 
-
+# Create the certificate chain file
+if [ ! -r ${CERTS}/${DOMAIN}-chain.pem ]
+then
+	cat ${CERTS}/${DOMAIN}-SIGNcert.pem ${CERTS}/${DOMAIN}-CAcert.pem  > ${CERTS}/${DOMAIN}-chain.pem
+fi
+	
 echo ""
 echo "-----"
 echo "Signing certificate checking complete"
@@ -155,7 +160,7 @@ for SERVER in ${HOSTS} ${CUSTOM_HOSTS}
         test $? -eq 0 || do_error "Couldn't generate the ${SERVER}-key.pem private certificate"
 
 # Create the signed certificate
-        test -s ${CERTS}/${SERVER}.crt || ${DBG} openssl ca -config ${CONF} ${PROMPT} ${PASSIN} -notext -in ${CSRS}/${SERVER}.csr -out ${CERTS}/${SERVER}.crt 
+        test -s ${CERTS}/${SERVER}.crt || ${DBG} openssl ca -config ${CONF} ${PROMPT} ${PASSIN} -extensions server_cert -notext -in ${CSRS}/${SERVER}.csr -out ${CERTS}/${SERVER}.crt 
         test $? -eq 0 || do_error "Couldn't generate the ${SERVER}.pem public certificate"
 
 ${DBG}	openssl x509 ${PASSIN} -in ${CERTS}/${SERVER}.crt -text -noout
@@ -197,6 +202,7 @@ for EMAIL in ${EMAIL_CERTS}
         	export OPENSSL_CONF=${CONF}
         	${DBG} openssl x509 -req -in ${CSRS}/${EMAIL}.csr ${PASSIN} -out ${CERTS}/${EMAIL}.crt ${DAYS} \
         	   -CA ${CERTS}/${DOMAIN}-SIGNcert.pem -CAkey ${PRIV}/${DOMAIN}-SIGNcert-key.pem -CAserial ${BASE}/db/serial \
+        	   -extensions user_cert \
         	   -setalias "${EMAIL} S/MIME Certificate" -addtrust emailProtection -addreject serverAuth -trustout
 	        test $? -eq 0 || do_error "Couldn't generate the ${EMAIL}.pem public certificate"
 	fi

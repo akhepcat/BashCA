@@ -159,30 +159,22 @@ challengePassword_max		= 20
 
 unstructuredName		= An optional company name
 
-[ usr_cert ]
-
-# These extensions are added when 'ca' signs a request.
-
-# This goes against PKIX guidelines but some CAs do it and some software
-# requires this to avoid interpreting an end user certificate as a CA.
-
-keyUsage			= nonRepudiation, keyEncipherment, dataEncipherment, digitalSignature
-basicConstraints		= critical,CA:FALSE
-subjectKeyIdentifier		= hash
-authorityKeyIdentifier		= keyid,issuer
-issuerAltName 			= issuer:copy
-crlDistributionPoints		= URI:https://www.snakeoil.lo/ca/crl.pem
-# This will be displayed in Netscape's comment listbox.
-#nsComment			= "OpenSSL Generated Certificate"
-
 [ crl_ext ]
 authorityKeyIdentifier		= keyid:always,issuer:always
 
 [ v3_ca ]
-basicConstraints		= critical,CA:TRUE
+# For ROOT Certificate Authorities
 subjectKeyIdentifier		= hash
-authorityKeyIdentifier		= keyid:always,issuer:always
-keyUsage			= cRLSign, keyCertSign, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement
+authorityKeyIdentifier		= keyid:always, issuer
+basicConstraints		= critical, CA:TRUE
+keyUsage			= critical, digitalSignature, cRLSign, keyCertSign
+
+[ v3_int_ca ]
+# For INTERMEDIATE Certificate Authorities
+subjectKeyIdentifier		= hash
+authorityKeyIdentifier		= keyid:always, issuer
+basicConstraints		= critical, CA:TRUE, pathlen:0
+keyUsage			= critical, digitalSignature, cRLSign, keyCertSign
 
 [ v3_ca_req ]
 basicConstraints                = critical,CA:TRUE
@@ -196,6 +188,39 @@ extendedKeyUsage		= serverAuth, clientAuth, emailProtection
 basicConstraints		= critical,CA:FALSE
 subjectKeyIdentifier		= hash
 
+[ usr_cert ]
+# These extensions are added when 'ca' signs a request for user authentication certifictes.
+basicConstraints		= CA:FALSE
+subjectKeyIdentifier		= hash
+authorityKeyIdentifier		= keyid,issuer
+issuerAltName 			= issuer:copy
+crlDistributionPoints		= URI:https://www.snakeoil.lo/ca/crl.pem
+nsCertType			= client, email
+keyUsage			= critical, nonRepudiation, keyEncipherment, dataEncipherment, digitalSignature
+extendedKeyUsage		= clientAuth, emailProtection
+# This will be displayed in Netscape's comment listbox.
+#nsComment			= "OpenSSL Generated Certificate"
+
+[ server_cert ]
+# These extensions are added when 'ca' signs a request for user authentication certifictes.
+basicConstraints		= CA:FALSE
+subjectKeyIdentifier		= hash
+authorityKeyIdentifier		= keyid, issuer:always
+issuerAltName 			= issuer:copy
+crlDistributionPoints		= URI:https://www.snakeoil.lo/ca/crl.pem
+nsCertType			= server
+keyUsage			= critical, keyEncipherment, dataEncipherment, digitalSignature
+extendedKeyUsage		= serverAuth
+# This will be displayed in Netscape's comment listbox.
+#nsComment			= "OpenSSL Generated Certificate"
+
+[ ocsp ]
+# Extension for OCSP signing certificates (`man ocsp`).
+basicConstraints		= CA:FALSE
+subjectKeyIdentifier		= hash
+authorityKeyIdentifier		= keyid, issuer
+keyUsage			= critical, digitalSignature
+extendedKeyUsage		= critical, OCSPSigning
 
 # keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement, keyCertSign, cRLSign, encipherOnly and decipherOnly
 # extendedKeyUsage = serverAuth, clientAuth, codeSigning, emailProtection, timeStamping, msCodeInd, msCodeCom, msCTLSign, msSGC, msEFS, nsSGC
