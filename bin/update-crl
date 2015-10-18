@@ -1,0 +1,43 @@
+#!/bin/bash
+MYDIR=$(dirname $0)
+TS=$(date +"%Y%m%d")
+HOST=$(hostname)
+PROG="${0##*/}"
+DO_RETURN=${SHLVL}
+
+PASSIN=${CAPASS:+-passin pass:"$CAPASS"}
+PASSOUT=${CAPASS:+-passout pass:"$CAPASS"}
+
+
+#####################################
+
+if [ ! -r ${MYDIR}/../conf.d/ca.conf ]
+then
+        do_error "You must create a configuration file in ${MYDIR}/../conf.d/ca.conf"
+fi
+
+. ${MYDIR}/../conf.d/ca.conf
+
+if [ ! -r ${CRLS}/crlnumber -o ! -s ${CRLS}/crlnumber ]
+then
+   SERIAL="${TS}000000"
+   echo ${SERIAL} > ${CRLS}/crlnumber
+fi
+
+${DBG}  test -r "${CRLS}/${CRLFILE}" || openssl ca -config ${SIGNCFG} ${PASSIN} -gencrl -out ${CRLS}/${CRLFILE}
+${DBG}  test -r "${CRLS}/${CRLFILE}" -a -n "${CRLDIST}" && ${DBG} openssl crl -in ${CRLS}/${CRLFILE} -outform DER -out ${CRLS}/dist-${CRLFILE}
+
+if [ -n ${CRLDIST} ]
+then
+	if [ -d ${CRLDIST} ]
+	then
+		CMD=cp
+	elif [ -z "${CRLDIST##*:*}" ]	# ssh-path
+	then
+		CMD=scp
+	else
+		CMD="echo unknown distribution type for: "
+	fi
+
+	${CMD} ${CRLS}/dist-${CRLFILE} ${CRLDIST}/${CRLFILE}
+fi
