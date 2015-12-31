@@ -6,10 +6,9 @@ DO_RETURN=${SHLVL}
 #DBG="echo"
 ##########################
 
+echo "using CAPASS=${CAPASS}"
 PASSIN=${CAPASS:+-passin pass:"$CAPASS"}
 PASSOUT=${CAPASS:+-passout pass:"$CAPASS"}
-
-echo "using PASS=$PASS"
 
 trap do_exit SIGTERM SIGKILL SIGQUIT SIGABRT SIGSTOP SIGSEGV 2
 
@@ -125,6 +124,7 @@ fi
 # Create the certificate chain file
 if [ ! -r ${CERTS}/${DOMAIN}-chain.pem ]
 then
+	# Order matters! issuer chain, then trust chain, then anchor chain, then CA chain...
 	cat ${CERTS}/${DOMAIN}-SIGNcert.pem ${CERTS}/${DOMAIN}-CAcert.pem  > ${CERTS}/${DOMAIN}-chain.pem
 fi
 	
