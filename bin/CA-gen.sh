@@ -6,11 +6,11 @@ DO_RETURN=${SHLVL}
 #DBG="echo"
 ##########################
 
-echo "using CAPASS=${CAPASS}"
+echo "using CAPASS as provided"
 PASSIN=${CAPASS:+-passin pass:"$CAPASS"}
 PASSOUT=${CAPASS:+-passout pass:"$CAPASS"}
 
-trap do_exit SIGTERM SIGKILL SIGQUIT SIGABRT SIGSTOP SIGSEGV 2
+trap do_exit SIGTERM SIGKILL SIGQUIT SIGABRT SIGSTOP SIGSEGV
 
 do_exit()
 {
