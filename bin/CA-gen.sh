@@ -10,7 +10,7 @@ echo "using CAPASS as provided"
 PASSIN=${CAPASS:+-passin pass:"$CAPASS"}
 PASSOUT=${CAPASS:+-passout pass:"$CAPASS"}
 
-trap do_exit SIGTERM SIGKILL SIGQUIT SIGABRT SIGSTOP SIGSEGV
+trap do_exit 2 3 6 9 11 15 19
 
 do_exit()
 {
