@@ -1,7 +1,20 @@
 #!/bin/bash
-
+# will exit with '3'  if the cert is expired, 1 if there are any other errors
 MYDIR=$(dirname $0)
 TS=$(date +"%Y%m%d")
+
+check_expirey() {
+	if [ 0 -gt $((($(date -u -d "$(openssl x509 -in ${MYCERT} -noout -enddate | cut -f2- -d=)" +%s) - $(date -u -d "today" +%s)) / 86400)) ]
+	then
+
+		echo "Certificate ${MYCERT} is expired"
+		exit 3
+	else
+		echo "Certificate ${MYCERT} is currently valid, continuing checks"
+	fi
+
+}
+
 
 if [ ! -r ${MYDIR}/../conf.d/ca.conf ]
 then
@@ -20,14 +33,25 @@ fi
 
 for CERT in ${CERTIFICATES}
 do
+	MYCERT=$(ls -1 ${CERTS}/${CERT}.[pc]*)
+	MYPRIV=$(ls -1 ${PRIV}/${CERT}-nokey.[pc]* ${PRIV}/${CERT}-key.[pc]* 2>/dev/null | sort -f | tail -1 )
+
+	check_expirey
 #openssl rsa -text -noout -in ${DIR}/${KEY}
 
 #Private-key
-	openssl rsa -text -check -noout -in ${PRIV}/${CERT}-key.[pc]*
-	test $? -gt 0 && exit 1
+	if [ -z "${MYPRIV##*-key*}" ]
+	then
+		echo "just checking modulus"
+		openssl rsa -noout -modulus -in "${MYPRIV}" | openssl md5
+		openssl x509 -noout -modulus -in "${MYCERT}" | openssl md5 	
+	else
+		openssl rsa -text -check -noout -in "${MYPRIV}"
+		test $? -gt 0 && exit 1
 #Certificate
-	openssl x509  -text -noout -in ${CERTS}/${CERT}.[pc]*
-	test $? -gt 0 && exit 1
+		openssl x509  -text -noout -in "${MYCERT}"
+		test $? -gt 0 && exit 1
+	fi
 
 	echo "----------------------"
 	echo ""
