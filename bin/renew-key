@@ -1,0 +1,69 @@
+#!/bin/bash
+# will exit with '3'  if the cert is expired, 1 if there are any other errors
+MYDIR=$(dirname $0)
+TS=$(date +"%Y%m%d")
+DO_RETURN=${SHLVL}
+
+#DBG="echo"
+##########################
+
+if [ -n "${CAPASS}" ]
+then
+	echo "using CAPASS=${CAPASS}"
+	PASSIN=${CAPASS:+-passin pass:"$CAPASS"}
+	PASSOUT=${CAPASS:+-passout pass:"$CAPASS"}
+fi
+
+if [ ! -r ${MYDIR}/../conf.d/ca.conf ]
+then
+        do_error "You must create a configuration file in ${MYDIR}/../conf.d/ca.conf"
+fi
+
+. ${MYDIR}/../conf.d/ca.conf
+
+for MYCERT in $(ls -1 ${CERTS}/[a-zA-Z]*.[pc][er][mt] | egrep -vi 'expired|@' )
+do
+
+	if [ 0 -gt $((($(date -u -d "$(openssl x509 -in ${MYCERT} -noout -enddate | cut -f2- -d=)" +%s) - $(date -u -d "today" +%s)))) ]
+	then
+		echo "Certificate ${MYCERT} is expired, renewing it"
+		
+		MYKEY=${MYCERT//.[pc][er][mt]/}-key.pem
+		MYKEY=${MYKEY//\/certs\//\/private\/}
+		MYCSR=${MYCERT//.[pc][er][mt]/}-${TS}.csr
+		MYCSR=${MYCSR//\/certs\//\/csrs\/}
+
+		MYCONF=${MYCERT//.[pc][er][mt]/}.cnf
+		MYCONF=${MYCONF//\/certs\//\/conf.d\/}
+
+		if [ ! -r "${MYKEY}" ]
+		then
+			echo "Can't locate private key ${MYKEY} for cert ${MYCERT}"
+			exit 1
+		fi
+		echo "Generating new CSR: ${MYCSR}"
+
+	        test -s ${MYCSR} || ${DBG} openssl req -config ${MYCONF} ${PROMPT} ${PASSIN} ${PASSOUT} -key ${MYKEY} -new ${DIGEST} -out ${MYCSR}
+		openssl req -in ${MYCSR} ${PASSIN} -noout -text
+		
+		echo "revoking expired certificate for renewal"
+		test -s ${MYCERT} && ${DBG} openssl ca -config ${MYCONF} ${PASSIN} -revoke ${MYCERT}
+		test -s ${MYCERT}.new || ${DBG} openssl ca -config ${MYCONF} ${PROMPT} ${PASSIN} -extensions server_cert -notext -in ${MYCSR} -out ${MYCERT}.new
+		if [ $? -ne 0 ]
+		then
+			echo "Error renewing certificate"
+		else
+			echo "${MYCERT}.new has been created successfully."
+			echo "You can install over the existing cert without replacing the private key"
+			
+			openssl x509 -in ${MYCERT}.new -noout -enddate
+		fi
+
+	else
+		echo "Certificate ${MYCERT} is currently valid, not renewing"
+
+	fi
+
+	echo "----------------------"
+	echo ""
+done
