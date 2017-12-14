@@ -1,0 +1,46 @@
+#!/bin/bash
+HOST=$(hostname)
+PROG="${0##*/}"
+DO_RETURN=${SHLVL}
+MYDIR=$(dirname $0)
+TS=$(date +"%Y%m%d")
+
+if [ ! -s ${MYDIR}/../conf.d/ca.conf ]
+then
+        do_error "You must create a configuration file in ${MYDIR}/../conf.d/ca.conf"
+fi
+
+. ${MYDIR}/../conf.d/ca.conf
+
+#DBG="echo"
+##########################
+
+if [ -n "$*" ]
+then
+        CERTLIST="$*"
+else
+	CERTLIST=$(cd ${CERTS} && ls -1 *.[pc][er][mt] | grep -ivE 'chain|expired')
+fi
+
+# Sort by length, to get access to the longest string
+declare -a arr=( ${CERTLIST} )
+IFS=$'\n' GLOBIGNORE='*' sorted_arr=($(printf '%s\n' ${arr[@]} | awk '{ print length($0) " " $0; }' | sort -rn | cut -d ' ' -f 2-))
+along=${sorted_arr[0]}
+length=${#along}
+length=$((length + 1))
+
+echo "Certificate expiries:"
+for i in ${CERTLIST};
+do
+	if [ -r "${i}" ];
+	then
+		printf "%${length}s - %s -- %s\n" ${i} $(openssl x509 -in ${i} -noout -enddate) $(openssl x509 -in ${i} -noout -subject | sed 's/subject= //gi;')
+	elif [ -r "${CERTS}/${i}" ]
+	then
+#		printf "%${length}s - " ${i}; openssl x509 -in ${CERTS}/${i} -noout -enddate
+		printf "%${length}s - %s -- %s\n" ${i} $(openssl x509 -in ${CERTS}/${i} -noout -enddate) $(openssl x509 -in ${CERTS}/${i} -noout -subject | sed 's/subject= //gi;')
+	else
+		echo "can't read certificate file ${i}"
+	fi
+
+done | sort -k6 -k3.11M -k4 | sed 's/notafter=//gi'
